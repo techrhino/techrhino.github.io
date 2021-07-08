@@ -1,0 +1,28 @@
+{
+  "files": {
+    "main.css": "/corebp.github.io/static/css/main.da4edb40.chunk.css",
+    "main.js": "/corebp.github.io/static/js/main.019c526f.chunk.js",
+    "main.js.map": "/corebp.github.io/static/js/main.019c526f.chunk.js.map",
+    "runtime-main.js": "/corebp.github.io/static/js/runtime-main.9b0d6c87.js",
+    "runtime-main.js.map": "/corebp.github.io/static/js/runtime-main.9b0d6c87.js.map",
+    "static/js/2.f16f0925.chunk.js": "/corebp.github.io/static/js/2.f16f0925.chunk.js",
+    "static/js/2.f16f0925.chunk.js.map": "/corebp.github.io/static/js/2.f16f0925.chunk.js.map",
+    "index.html": "/corebp.github.io/index.html",
+    "static/css/main.da4edb40.chunk.css.map": "/corebp.github.io/static/css/main.da4edb40.chunk.css.map",
+    "static/js/2.f16f0925.chunk.js.LICENSE.txt": "/corebp.github.io/static/js/2.f16f0925.chunk.js.LICENSE.txt",
+    "static/media/accredo_company.md": "/corebp.github.io/static/media/accredo_company.d21d9b3b.md",
+    "static/media/accredo_prods.md": "/corebp.github.io/static/media/accredo_prods.8db0705e.md",
+    "static/media/corefire_extras.md": "/corebp.github.io/static/media/corefire_extras.a88eec71.md",
+    "static/media/corefire_jobs.md": "/corebp.github.io/static/media/corefire_jobs.88d338e5.md",
+    "static/media/corefire_prods.md": "/corebp.github.io/static/media/corefire_prods.4e6437db.md",
+    "static/media/logo.be9cfe1a.png": "/corebp.github.io/static/media/logo.be9cfe1a.png",
+    "static/media/random.md": "/corebp.github.io/static/media/random.f4157f60.md",
+    "static/media/zerossl.md": "/corebp.github.io/static/media/zerossl.aac67445.md"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.9b0d6c87.js",
+    "static/js/2.f16f0925.chunk.js",
+    "static/css/main.da4edb40.chunk.css",
+    "static/js/main.019c526f.chunk.js"
+  ]
+}
