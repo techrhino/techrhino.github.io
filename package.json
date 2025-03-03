@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "gh-pages": "^6.3.0",
-    "postcss": "^8.3.11",
+    "postcss": "^8.5.3",
     "postcss-flexbugs-fixes": "^5.0.2",
     "postcss-nested": "^7.0.2",
     "postcss-preset-env": "^6.7.0",
