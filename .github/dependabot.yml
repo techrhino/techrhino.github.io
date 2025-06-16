@@ -6,9 +6,6 @@ updates:
     interval: daily
   open-pull-requests-limit: 10
   ignore:
-  - dependency-name: tailwindcss
-    versions:
-    - 2.1.2
   - dependency-name: react-markdown
     versions:
     - 6.0.0
