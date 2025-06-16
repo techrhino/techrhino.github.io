@@ -71,7 +71,7 @@ async function UpdateLatestTimeEntry(accountId, notes) {
 		let exEntryData = await exEntry.json();
 		
 		// Update the latest time entry with new data
-		let opts = { method: 'PATCH', headers, body: JSON.stringify({ notes: [exEntryData.notes, notes].join("\n\n")})}
+		let opts = { method: 'PATCH', headers, body: JSON.stringify({ notes: [exEntryData.notes, notes].join("\n\n").trim()})}
 		let updateResponse = await fetch(`${apiUrl}/${latestTimeEntryId}`, opts);
 		if (!updateResponse.ok) {
 			throw new Error(
