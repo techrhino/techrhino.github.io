@@ -112,9 +112,9 @@ function CreateGitHubActionButton() {
 
 function AreVariablesValid(){
 	let errors = []
-	if(!REPO) errors.push('ORG is undefined - GitHub organisation endpoint slug')
-	if(!GITHUB) errors.push('GITHUB is undefined - GitHub personal access token')	
-	if(!HARVEST) errors.push('HARVEST is undefined - Harvest API token')	
+	if(typeof(REPO) == 'undefined') errors.push('ORG is undefined - GitHub organisation endpoint slug')
+	if(typeof(GITHUB) == 'undefined') errors.push('GITHUB is undefined - GitHub personal access token')	
+	if(typeof(HARVEST) == 'undefined') errors.push('HARVEST is undefined - Harvest API token')	
 	if(errors.length>0) {
 		alert(errors.join('\n'))
 		return false
