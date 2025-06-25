@@ -1,3 +1,5 @@
+CONST EXT_NAME = 'GitHub x Harvest'
+
 async function GetLatestCommit() {
 	let project = window.prompt('Project?')
 	if(!project) throw new Error('Project is required')
@@ -116,7 +118,7 @@ function AreVariablesValid(){
 	if(typeof(GITHUB) == 'undefined') errors.push('GITHUB is undefined - GitHub personal access token')	
 	if(typeof(HARVEST) == 'undefined') errors.push('HARVEST is undefined - Harvest API token')	
 	if(errors.length>0) {
-		alert(errors.join('\n'))
+		console.error(EXT_NAME, ' :: ', errors.join('\n'))
 		return false
 	}
 	return true
