@@ -4,7 +4,7 @@ async function GetLatestCommit() {
 	let branch = window.prompt('Branch?')
 	if(!branch) throw new Error('Branch is required')
 	
-	let apiUrl = `https://api.github.com/repos/processpro/${project}/commits/${branch}`;
+	let apiUrl = `https://api.github.com/repos/${ORG}/${project}/commits/${branch}`;
 	let headers = {
 				Authorization: `Bearer ${GITHUB}`,
 				'X-GitHub-Api-Version': '2022-11-28',
@@ -108,6 +108,22 @@ function CreateGitHubActionButton() {
 		</svg>
 	</a>`;
 	cont.append(git);
+}
+
+function AreVariablesValid(){
+	let errors = []
+	if(!REPO) errors.push('ORG is undefined - GitHub organisation endpoint slug')
+	if!GITHUB) errors.push('GITHUB is undefined - GitHub personal access token')	
+	if!HARVEST) errors.push('HARVEST is undefined - Harvest API token')	
+	if(errors.length>0) {
+		alert(errors.join('\n'))
+		return false
+	}
+	return true
+}
+
+function Initialise(){
+	if(AreVariablesValid()) CreateGitHubActionButton()
 }
 
 $(document).on('click', '.github-time-entry', () => UpdateLatestHarvest());
