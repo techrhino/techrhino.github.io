@@ -1,4 +1,4 @@
-CONST EXT_NAME = 'GitHub x Harvest'
+const EXT_NAME = 'GitHub x Harvest'
 
 async function GetLatestCommit() {
 	let project = window.prompt('Project?')
