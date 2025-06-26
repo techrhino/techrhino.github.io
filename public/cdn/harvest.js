@@ -128,5 +128,6 @@ function Initialise(){
 	if(AreVariablesValid()) CreateGitHubActionButton()
 }
 
+$(document).on('click','.js-edit-entry, .js-new-time-entry', () => CreateGitHubActionButton());
 $(document).on('click', '.github-time-entry', () => UpdateLatestHarvest());
 $(document).on('load', '.day-entry-editor', () => console.log('form loaded'));
