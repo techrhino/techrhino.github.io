@@ -113,12 +113,12 @@ function CreateGitHubActionButton() {
 }
 
 function AreVariablesValid(){
-	let errors = []
-	if(typeof(REPO) == 'undefined') errors.push('ORG is undefined - GitHub organisation endpoint slug')
+	let errors = [EXT_NAME]
+	if(typeof(ORG) == 'undefined') errors.push('ORG is undefined - GitHub organisation endpoint slug')
 	if(typeof(GITHUB) == 'undefined') errors.push('GITHUB is undefined - GitHub personal access token')	
 	if(typeof(HARVEST) == 'undefined') errors.push('HARVEST is undefined - Harvest API token')	
-	if(errors.length>0) {
-		console.error(EXT_NAME, ' :: ', errors.join('\n'))
+	if(errors.length>1) {
+		console.error(errors.join('\n'))
 		return false
 	}
 	return true
