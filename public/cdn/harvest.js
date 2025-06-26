@@ -102,6 +102,8 @@ function CreateGitHubActionButton() {
 
 	if ($('.github-time-entry').length > 0) return;
 
+	if(!AreVariablesValid()) return
+
 	let cont = form.find('.js-submit').parent();
 	let git = `
 	<a type="button" class="pds-button github-time-entry" style="margin-left: 1rem;">
@@ -122,10 +124,6 @@ function AreVariablesValid(){
 		return false
 	}
 	return true
-}
-
-function Initialise(){
-	if(AreVariablesValid()) CreateGitHubActionButton()
 }
 
 $(document).on('click','.js-edit-entry, .js-new-time-entry', () => CreateGitHubActionButton());
