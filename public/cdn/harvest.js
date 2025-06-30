@@ -129,3 +129,22 @@ function AreVariablesValid(){
 $(document).on('click','.js-edit-entry, .js-new-time-entry', () => CreateGitHubActionButton());
 $(document).on('click', '.github-time-entry', () => UpdateLatestHarvest());
 $(document).on('load', '.day-entry-editor', () => console.log('form loaded'));
+$(document).on('keydown', e=> KeyDown(e));
+
+
+function KeyDown(event) {
+	let { which, altKey, metaKey } = event
+	let char = String.fromCharCode(which).toLowerCase();
+
+	if (altKey || metaKey)
+		AltDown(event, char)
+}
+
+async function AltDown(event, char) {
+	event.preventDefault();
+	switch (char) {
+		case 'g':
+			$('.github-time-entry').trigger('click')
+			break;
+	}
+}
