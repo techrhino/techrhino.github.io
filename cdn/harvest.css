@@ -1,0 +1,85 @@
+body div#view,
+body .pds-dialog,
+div.calendar-drawer, 
+.pds-alert  {
+	background: #333c43;
+}
+
+th {
+	background: #333c43 !important;
+} 
+
+.pds-input,
+.pds-input[readonly],
+.calendar-event,
+.calendar-event:disabled,
+.pds-chosen .pds-button,
+.pds-chosen-selection div,
+.pds-chosen-container *,
+.chosen-container-multi .chosen-choices,
+.pds-card,
+.pds-table thead,
+.pds-menu,
+.action-bar,
+.action-bar *,
+.expenses-week-dates,
+.dropdown,
+.dropdown * {
+	background: #1d2125 !important;
+}
+
+button.calendar-hide-drawer,
+#report-options {
+	background: transparent;
+}
+
+
+
+
+.pds-container *,
+.pds-dialog-backdrop *,
+div.pds-color-muted,
+span {
+	color: mintcream !important;
+}
+
+.week-view-table thead .day.focused-day a.is-not-today{
+	color: #fa5d00 !important;
+}
+
+.week-view-table thead .day.focused-day a.is-today,
+a.is-today {
+	color: green !important;
+}
+
+.pds-button:not(.pds-button-primary) {
+	background: unset;
+	border: 1px solid green;
+}
+
+tr.day-view-entry.is-running {
+	background: green;
+}
+
+tbody,
+.pds-empty {
+	border: 0.5px solid rgba(24, 132, 51, 0.5);
+	border-bottom: unset;
+}
+
+.pds-card-warm-white {
+	border: 0.5px solid rgba(24, 132, 51, 0.5);
+}
+
+#sub-nav a:is(:hover, :active, .current),
+.pds-tab.pds-tab-selected,
+.pds-tab:hover {
+	border: unset !important;
+	box-shadow: inset 0 -2px green;
+}
+.pds-button-toggle .pds-button.pds-button-selected,
+.day.is-today {
+	background-color: rgba(24, 132, 51, 0.5) !important;
+	border-color: green !important;
+	color: mintcream !important;
+}
