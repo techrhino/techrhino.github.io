@@ -12,11 +12,11 @@ th {
 	background: #333c43 !important;
 }
 
-/* .pds-input,
-.pds-input[readonly], */
+select.pds-input,
+select.pds-input[readonly],
 .calendar-event,
 .calendar-event:disabled,
-.pds-chosen .pds-button,
+/* .pds-chosen .pds-button, */
 .pds-chosen-selection div,
 .pds-chosen-container div *,
 .chosen-container-multi .chosen-choices,
@@ -50,6 +50,7 @@ a.is-today {
 	color: green !important;
 }
 
+.pdsf-card-warm-white,
 .pds-button:not(.pds-button-primary) {
 	background: unset;
 	border: 1px solid green;
@@ -64,10 +65,10 @@ tr.day-view-entry.is-running,
 
 tbody,
 .pds-empty {
-	border: 0.5px solid rgba(24, 132, 51, 0.5);	
+	border: 0.5px solid rgba(24, 132, 51, 0.5);
 }
 
-tbody{
+tbody {
 	border-bottom: unset;
 }
 
@@ -80,6 +81,10 @@ tbody{
 .pds-tab:hover {
 	border: unset !important;
 	box-shadow: inset 0 -2px green;
+}
+
+.pds-input {
+	border-color: green !important;
 }
 
 .pds-input,
