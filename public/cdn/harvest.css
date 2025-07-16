@@ -12,13 +12,13 @@ th {
 	background: #333c43 !important;
 }
 
-.pds-input,
-.pds-input[readonly],
+/* .pds-input,
+.pds-input[readonly], */
 .calendar-event,
 .calendar-event:disabled,
 .pds-chosen .pds-button,
 .pds-chosen-selection div,
-.pds-chosen-container *,
+.pds-chosen-container div *,
 .chosen-container-multi .chosen-choices,
 .pds-card,
 .pds-table thead,
@@ -28,23 +28,17 @@ th {
 	background: #1d2125 !important;
 }
 
-.pds-input{
-	border-color: mintcream !important;
-}
-
 button.calendar-hide-drawer,
 #report-options {
 	background: transparent;
 }
-
-
-
 
 .pds-container *,
 .pds-dialog-backdrop *,
 div.pds-color-muted,
 span {
 	color: mintcream !important;
+	-webkit-text-fill-color: mintcream !important;
 }
 
 .week-view-table thead .day.focused-day a.is-not-today {
@@ -62,6 +56,7 @@ a.is-today {
 }
 
 .expenses-week-dates,
+.project-search-results h4,
 tr.day-view-entry.is-running,
 .pds-side-tabs-wrapper .pds-tab-selected {
 	background: green;
@@ -87,6 +82,7 @@ tbody{
 	box-shadow: inset 0 -2px green;
 }
 
+.pds-input,
 .pds-button-toggle .pds-button.pds-button-selected,
 .day.is-today {
 	background-color: rgba(24, 132, 51, 0.5) !important;
