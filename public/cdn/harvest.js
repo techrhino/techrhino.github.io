@@ -2,15 +2,15 @@ const EXT_NAME = 'GitHub x Harvest'
 
 async function GetLatestCommit() {
 	let project = window.prompt('Project?')
-	if(!project) throw new Error('Project is required')
+	if (!project) throw new Error('Project is required')
 	let branch = window.prompt('Branch?')
-	if(!branch) throw new Error('Branch is required')
-	
+	if (!branch) throw new Error('Branch is required')
+
 	let apiUrl = `https://api.github.com/repos/${ORG}/${project}/commits/${branch}`;
 	let headers = {
-				Authorization: `Bearer ${GITHUB}`,
-				'X-GitHub-Api-Version': '2022-11-28',
-			}
+		Authorization: `Bearer ${GITHUB}`,
+		'X-GitHub-Api-Version': '2022-11-28',
+	}
 	try {
 		let response = await fetch(apiUrl, { headers });
 		if (!response.ok) {
@@ -29,51 +29,54 @@ async function GetLatestCommit() {
 
 async function GetMessageForHarvest() {
 	return await GetLatestCommit().then((res) => {
-		if (!res) return console.log('Failed to fetch commit details.');
+		if (!res) {
+			ToggleLoader(false);
+			return console.log('Failed to fetch commit details.');
+		}
 
 		let msg = res?.commit?.message;
 		let url = res?.html_url;
 		return msg + '\n' + url;
 	})
-	.catch(e=> ToggleLoader(false));
+		.catch(e => ToggleLoader(false));
 }
 
 async function UpdateLatestHarvest() {
 	ToggleLoader(true)
-	
+
 	let accountId = '1525466';
 	let note = await GetMessageForHarvest();
-	if(!note) return
+	if (!note) return
 	return UpdateLatestTimeEntry(accountId, note);
 }
 
 async function UpdateLatestTimeEntry(accountId, notes) {
 	let apiUrl = `https://api.harvestapp.com/v2/time_entries`;
 	let headers = {
-				Authorization: `Bearer ${HARVEST}`,
-				'Harvest-Account-ID': accountId,
-				'Content-Type': 'application/json',
-			}
-	
+		Authorization: `Bearer ${HARVEST}`,
+		'Harvest-Account-ID': accountId,
+		'Content-Type': 'application/json',
+	}
+
 	try {
 		// Get the ID of the latest time entry
 		let latestTimeEntryId = $('form.day-entry-editor').attr('data-analytics-day-entry-id')
-		
-		if(!latestTimeEntryId){
+
+		if (!latestTimeEntryId) {
 			$('.entry-notes').html(notes)
 			return ToggleLoader(false)
 		}
-		
-		let exEntry = await fetch(`${apiUrl}/${latestTimeEntryId}`,{ method: 'GET', headers })
+
+		let exEntry = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'GET', headers })
 		if (!exEntry.ok) {
 			throw new Error(
 				`Harvest API get request failed with status ${exEntry.status}`
 			);
 		}
 		let exEntryData = await exEntry.json();
-		
+
 		// Update the latest time entry with new data
-		let opts = { method: 'PATCH', headers, body: JSON.stringify({ notes: [exEntryData.notes, notes].join("\n\n").trim()})}
+		let opts = { method: 'PATCH', headers, body: JSON.stringify({ notes: [exEntryData.notes, notes].join("\n\n").trim() }) }
 		let updateResponse = await fetch(`${apiUrl}/${latestTimeEntryId}`, opts);
 		if (!updateResponse.ok) {
 			throw new Error(
@@ -92,7 +95,7 @@ async function UpdateLatestTimeEntry(accountId, notes) {
 	}
 }
 
-function ToggleLoader(isVisible){
+function ToggleLoader(isVisible) {
 	$('.day-entry-editor .form-loading').toggleClass('is-visible', isVisible)
 }
 
@@ -102,7 +105,7 @@ function CreateGitHubActionButton() {
 
 	if ($('.github-time-entry').length > 0) return;
 
-	if(!AreVariablesValid()) return
+	if (!AreVariablesValid()) return
 
 	let cont = form.find('.js-submit').parent();
 	let git = `
@@ -114,22 +117,22 @@ function CreateGitHubActionButton() {
 	cont.append(git);
 }
 
-function AreVariablesValid(){
+function AreVariablesValid() {
 	let errors = [EXT_NAME]
-	if(typeof(ORG) == 'undefined') errors.push('ORG is undefined - GitHub organisation endpoint slug')
-	if(typeof(GITHUB) == 'undefined') errors.push('GITHUB is undefined - GitHub personal access token')	
-	if(typeof(HARVEST) == 'undefined') errors.push('HARVEST is undefined - Harvest API token')	
-	if(errors.length>1) {
+	if (typeof (ORG) == 'undefined') errors.push('ORG is undefined - GitHub organisation endpoint slug')
+	if (typeof (GITHUB) == 'undefined') errors.push('GITHUB is undefined - GitHub personal access token')
+	if (typeof (HARVEST) == 'undefined') errors.push('HARVEST is undefined - Harvest API token')
+	if (errors.length > 1) {
 		console.error(errors.join('\n'))
 		return false
 	}
 	return true
 }
 
-$(document).on('click','.js-edit-entry, .js-new-time-entry', () => CreateGitHubActionButton());
+$(document).on('click', '.js-edit-entry, .js-new-time-entry', () => CreateGitHubActionButton());
 $(document).on('click', '.github-time-entry', () => UpdateLatestHarvest());
 $(document).on('load', '.day-entry-editor', () => console.log('form loaded'));
-$(document).on('keydown', e=> KeyDown(e));
+$(document).on('keydown', e => KeyDown(e));
 
 
 function KeyDown(event) {
