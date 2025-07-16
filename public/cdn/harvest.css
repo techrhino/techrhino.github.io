@@ -23,7 +23,6 @@ th {
 .pds-card,
 .pds-table thead,
 .pds-menu,
-.expenses-week-dates,
 .dropdown,
 .dropdown * {
 	background: #1d2125 !important;
@@ -42,6 +41,7 @@ button.calendar-hide-drawer,
 div.pds-color-muted,
 span {
 	color: mintcream !important;
+	border-color: mintcream !important;
 }
 
 .week-view-table thead .day.focused-day a.is-not-today {
@@ -58,7 +58,9 @@ a.is-today {
 	border: 1px solid green;
 }
 
-tr.day-view-entry.is-running {
+.expenses-week-dates,
+tr.day-view-entry.is-running,
+.pds-side-tabs-wrapper .pds-tab-selected {
 	background: green;
 }
 
