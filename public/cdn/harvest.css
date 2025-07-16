@@ -28,6 +28,10 @@ th {
 	background: #1d2125 !important;
 }
 
+.pds-input{
+	border-color: mintcream !important;
+}
+
 button.calendar-hide-drawer,
 #report-options {
 	background: transparent;
@@ -41,7 +45,6 @@ button.calendar-hide-drawer,
 div.pds-color-muted,
 span {
 	color: mintcream !important;
-	border-color: mintcream !important;
 }
 
 .week-view-table thead .day.focused-day a.is-not-today {
@@ -66,7 +69,10 @@ tr.day-view-entry.is-running,
 
 tbody,
 .pds-empty {
-	border: 0.5px solid rgba(24, 132, 51, 0.5);
+	border: 0.5px solid rgba(24, 132, 51, 0.5);	
+}
+
+tbody{
 	border-bottom: unset;
 }
 
