@@ -1,9 +1,9 @@
 const EXT_NAME = 'GitHub x Harvest'
 
 async function GetLatestCommit() {
-	let project = window.prompt('Project?')
+	let project = window.prompt('Project?', typeof(DEFAULT_PROJECT) == 'undefined' ? '' : DEFAULT_PROJECT)
 	if (!project) throw new Error('Project is required')
-	let branch = window.prompt('Branch?')
+	let branch = window.prompt('Branch?', typeof(DEFAULT_BRANCH) == 'undefined' ? '' : DEFAULT_BRANCH)
 	if (!branch) throw new Error('Branch is required')
 
 	let apiUrl = `https://api.github.com/repos/${ORG}/${project}/commits/${branch}`;
