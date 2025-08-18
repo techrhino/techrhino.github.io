@@ -12,18 +12,16 @@ th {
 	background: #333c43 !important;
 }
 
-select.pds-input,
-select.pds-input[readonly],
-.calendar-event,
-.calendar-event:disabled,
-/* .pds-chosen .pds-button, */
-.pds-chosen-selection div,
-.pds-chosen-container div *,
-.chosen-container-multi .chosen-choices,
-.pds-card,
-.pds-table thead,
-.pds-menu,
-.dropdown,
+select.pds-input, 
+select.pds-input[readonly], 
+.calendar-event, 
+.calendar-event:disabled, 
+.pds-chosen-container div:not(.pds-chosen-selection) *, 
+.chosen-container-multi .chosen-choices, 
+.pds-card, 
+.pds-table thead, 
+.pds-menu, 
+.dropdown, 
 .dropdown * {
 	background: #1d2125 !important;
 }
