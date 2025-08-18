@@ -22,7 +22,8 @@ select.pds-input[readonly],
 .pds-table thead, 
 .pds-menu, 
 .dropdown, 
-.dropdown * {
+.dropdown *,
+.popover * {
 	background: #1d2125 !important;
 }
 
