@@ -70,41 +70,50 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 			return ToggleLoader(false)
 		}
 
+		// Fetch the existing entry to carry over its fields
 		let exEntry = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'GET', headers })
 		if (!exEntry.ok) {
-			throw new Error(
-				`Harvest API get request failed with status ${exEntry.status}`
-			);
+			throw new Error(`Harvest API get request failed with status ${exEntry.status}`);
 		}
-		let exEntryData = await exEntry.json();
+		let ex = await exEntry.json();
 
-		// Build patch body — notes contains only the commit message now,
-		// and the commit URL is sent as a structured external_reference.
-		let body = {
-			notes: [exEntryData.notes, commit.message].join("\n\n").trim(),
+		// external_reference can only be set at creation time (POST), not via PATCH.
+		// So we delete the existing entry and recreate it with all the same fields
+		// plus the external_reference.
+		let deleteResponse = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'DELETE', headers })
+		if (!deleteResponse.ok) {
+			throw new Error(`Harvest API delete request failed with status ${deleteResponse.status}`);
+		}
+
+		let newEntry = {
+			project_id: ex.project.id,
+			task_id: ex.task.id,
+			spent_date: ex.spent_date,
+			hours: ex.hours_without_timer ?? ex.hours,
+			notes: [ex.notes, commit.message].join("\n\n").trim(),
 			external_reference: {
 				id: commit.sha,
 				group_id: GITHUB_ORG,
 				permalink: commit.url,
+				service: 'GitHub',
 			},
 		}
 
-		let opts = { method: 'PATCH', headers, body: JSON.stringify(body) }
-		let updateResponse = await fetch(`${apiUrl}/${latestTimeEntryId}`, opts);
-		if (!updateResponse.ok) {
-			throw new Error(
-				`Harvest API update request failed with status ${updateResponse.status}`
-			);
+		// Preserve start/end times if the entry used them
+		if (ex.started_time) newEntry.started_time = ex.started_time
+		if (ex.ended_time) newEntry.ended_time = ex.ended_time
+
+		let createResponse = await fetch(apiUrl, { method: 'POST', headers, body: JSON.stringify(newEntry) })
+		if (!createResponse.ok) {
+			throw new Error(`Harvest API create request failed with status ${createResponse.status}`);
 		}
 
-		let updatedTimeEntryData = await updateResponse.json();
-		console.log(
-			'Successfully updated the latest time entry:',
-			updatedTimeEntryData
-		);
+		let createdEntry = await createResponse.json();
+		console.log('Successfully recreated time entry with external_reference:', createdEntry);
 		$('.js-close').click()
 	} catch (error) {
 		console.error('Error updating time entry:', error.message);
+		ToggleLoader(false)
 	}
 }
 
