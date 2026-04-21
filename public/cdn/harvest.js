@@ -28,6 +28,8 @@ async function GetLatestCommit() {
 }
 
 async function GetMessageForHarvest() {
+	let custom_note = window.prompt('Custom note?', '')
+	
 	return await GetLatestCommit().then((res) => {
 		if (!res) {
 			ToggleLoader(false);
@@ -36,6 +38,7 @@ async function GetMessageForHarvest() {
 		}
 
 		return {
+			note: custom_note,
 			message: res?.commit?.message,
 			url: res?.html_url,
 			sha: res?.sha,
@@ -85,12 +88,13 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 			throw new Error(`Harvest API delete request failed with status ${deleteResponse.status}`);
 		}
 
+		let notes = [ex.notes, commit.note, commit.message].filter(e=>e);
 		let newEntry = {
 			project_id: ex.project.id,
 			task_id: ex.task.id,
 			spent_date: ex.spent_date,
 			hours: ex.hours_without_timer ?? ex.hours,
-			notes: [ex.notes, commit.message].join("\n\n").trim(),
+			notes: notes.join("\n\n").trim(),
 			external_reference: {
 				id: commit.sha,
 				group_id: GITHUB_ORG,
