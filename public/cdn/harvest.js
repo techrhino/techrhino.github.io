@@ -1,14 +1,14 @@
 const EXT_NAME = 'GitHub x Harvest'
 
 async function GetLatestCommit() {
-	let project = window.prompt('Project?', typeof(DEFAULT_PROJECT) == 'undefined' ? '' : DEFAULT_PROJECT)
+	let project = window.prompt('Project?', typeof(GITHUB_DEFAULT_PROJECT) == 'undefined' ? '' : GITHUB_DEFAULT_PROJECT)
 	if (!project) throw new Error('Project is required')
-	let branch = window.prompt('Branch?', typeof(DEFAULT_BRANCH) == 'undefined' ? '' : DEFAULT_BRANCH)
+	let branch = window.prompt('Branch?', typeof(GITHUB_DEFAULT_BRANCH) == 'undefined' ? '' : GITHUB_DEFAULT_BRANCH)
 	if (!branch) throw new Error('Branch is required')
 
-	let apiUrl = `https://api.github.com/repos/${ORG}/${project}/commits/${branch}`;
+	let apiUrl = `https://api.github.com/repos/${GITHUB_ORG}/${project}/commits/${branch}`;
 	let headers = {
-		Authorization: `Bearer ${GITHUB}`,
+		Authorization: `Bearer ${GITHUB_TOKEN}`,
 		'X-GitHub-Api-Version': '2022-11-28',
 	}
 	try {
@@ -31,15 +31,15 @@ async function GetMessageForHarvest() {
 	return await GetLatestCommit().then((res) => {
 		if (!res) {
 			ToggleLoader(false);
-			return console.log('Failed to fetch commit details.');
+			console.log('Failed to fetch commit details.');
+			return null;
 		}
 
-		let msg = res?.commit?.message;
-		let url = res?.html_url;
-		let clickUrl = `<a href="${url}">(see commit)</a>`
-		let notes = `${msg} (${clickUrl})`;
-		console.log(notes)
-		return notes;
+		return {
+			message: res?.commit?.message,
+			url: res?.html_url,
+			sha: res?.sha,
+		};
 	})
 		.catch(e => ToggleLoader(false));
 }
@@ -47,16 +47,16 @@ async function GetMessageForHarvest() {
 async function UpdateLatestHarvest() {
 	ToggleLoader(true)
 
-	let accountId = '1525466';
-	let note = await GetMessageForHarvest();
-	if (!note) return
-	return UpdateLatestTimeEntry(accountId, note);
+	let accountId = HARVEST_ACCOUNT_ID;
+	let commit = await GetMessageForHarvest();
+	if (!commit) return
+	return UpdateLatestTimeEntry(accountId, commit);
 }
 
-async function UpdateLatestTimeEntry(accountId, notes) {
+async function UpdateLatestTimeEntry(accountId, commit) {
 	let apiUrl = `https://api.harvestapp.com/v2/time_entries`;
 	let headers = {
-		Authorization: `Bearer ${HARVEST}`,
+		Authorization: `Bearer ${HARVEST_TOKEN}`,
 		'Harvest-Account-ID': accountId,
 		'Content-Type': 'application/json',
 	}
@@ -66,7 +66,7 @@ async function UpdateLatestTimeEntry(accountId, notes) {
 		let latestTimeEntryId = $('form.day-entry-editor').attr('data-analytics-day-entry-id')
 
 		if (!latestTimeEntryId) {
-			$('.entry-notes').html(notes)
+			$('.entry-notes').html(commit.message)
 			return ToggleLoader(false)
 		}
 
@@ -78,8 +78,18 @@ async function UpdateLatestTimeEntry(accountId, notes) {
 		}
 		let exEntryData = await exEntry.json();
 
-		// Update the latest time entry with new data
-		let opts = { method: 'PATCH', headers, body: JSON.stringify({ notes: [exEntryData.notes, notes].join("\n\n").trim() }) }
+		// Build patch body — notes contains only the commit message now,
+		// and the commit URL is sent as a structured external_reference.
+		let body = {
+			notes: [exEntryData.notes, commit.message].join("\n\n").trim(),
+			external_reference: {
+				id: commit.sha,
+				group_id: ORG,
+				permalink: commit.url,
+			},
+		}
+
+		let opts = { method: 'PATCH', headers, body: JSON.stringify(body) }
 		let updateResponse = await fetch(`${apiUrl}/${latestTimeEntryId}`, opts);
 		if (!updateResponse.ok) {
 			throw new Error(
@@ -122,9 +132,9 @@ function CreateGitHubActionButton() {
 
 function AreVariablesValid() {
 	let errors = [EXT_NAME]
-	if (typeof (ORG) == 'undefined') errors.push('ORG is undefined - GitHub organisation endpoint slug')
-	if (typeof (GITHUB) == 'undefined') errors.push('GITHUB is undefined - GitHub personal access token')
-	if (typeof (HARVEST) == 'undefined') errors.push('HARVEST is undefined - Harvest API token')
+	if (typeof (GITHUB_ORG) == 'undefined') errors.push('GITHUB_ORG is undefined - GitHub organisation endpoint slug')
+	if (typeof (GITHUB_TOKEN) == 'undefined') errors.push('GITHUB_TOKEN is undefined - GitHub personal access token')
+	if (typeof (HARVEST_TOKEN) == 'undefined') errors.push('HARVEST_TOKEN is undefined - Harvest API token')
 	if (errors.length > 1) {
 		console.error(errors.join('\n'))
 		return false
