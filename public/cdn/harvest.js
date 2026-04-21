@@ -84,7 +84,7 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 			notes: [exEntryData.notes, commit.message].join("\n\n").trim(),
 			external_reference: {
 				id: commit.sha,
-				group_id: ORG,
+				group_id: GITHUB_ORG,
 				permalink: commit.url,
 			},
 		}
