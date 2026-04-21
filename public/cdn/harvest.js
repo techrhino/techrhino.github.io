@@ -37,7 +37,9 @@ async function GetMessageForHarvest() {
 		let msg = res?.commit?.message;
 		let url = res?.html_url;
 		let clickUrl = `<a href="${url}">(see commit)</a>`
-		return `${msg} (${clickUrl})`;
+		let notes = `${msg} (${clickUrl})`;
+		console.log(notes)
+		return notes;
 	})
 		.catch(e => ToggleLoader(false));
 }
