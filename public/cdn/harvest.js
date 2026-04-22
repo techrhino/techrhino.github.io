@@ -139,6 +139,25 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 
 		let createdEntry = await createResponse.json();
 		console.log('Successfully created time entry with external_reference:', createdEntry);
+
+		// Prepend Ref to the new entry's notes so every created entry is identifiable by ID
+		let refNotes = [`Ref: #${createdEntry.id}`, createdEntry.notes].filter(e => e).join("\n\n")
+		await fetch(`${apiUrl}/${createdEntry.id}`, {
+			method: 'PATCH',
+			headers,
+			body: JSON.stringify({ notes: refNotes }),
+		})
+
+		// If this was a satellite entry, patch the parent's notes to reference it
+		if (latestTimeEntryId && ex?.external_reference) {
+			let updatedParentNotes = [ex.notes, `See satellite entry #${createdEntry.id}`].filter(e => e).join("\n\n").trim()
+			await fetch(`${apiUrl}/${latestTimeEntryId}`, {
+				method: 'PATCH',
+				headers,
+				body: JSON.stringify({ notes: updatedParentNotes }),
+			})
+		}
+
 		$('.js-close').click()
 	} catch (error) {
 		console.error('Error updating time entry:', error.message);
