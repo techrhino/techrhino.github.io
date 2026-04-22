@@ -55,6 +55,15 @@ async function UpdateLatestHarvest() {
 	return UpdateLatestTimeEntry(accountId, commit);
 }
 
+async function GetLastTimeEntry(apiUrl, headers) {
+	let response = await fetch(`${apiUrl}?per_page=1`, { method: 'GET', headers })
+	if (!response.ok) {
+		throw new Error(`Harvest API request failed with status ${response.status}`);
+	}
+	let data = await response.json();
+	return data.time_entries?.[0] ?? null;
+}
+
 async function UpdateLatestTimeEntry(accountId, commit) {
 	let apiUrl = `https://api.harvestapp.com/v2/time_entries`;
 	let headers = {
@@ -66,51 +75,61 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 	try {
 		let latestTimeEntryId = $('form.day-entry-editor').attr('data-analytics-day-entry-id')
 
-		if (!latestTimeEntryId) {
-			$('.entry-notes').html(commit.message)
-			return ToggleLoader(false)
-		}
-
-		// Fetch the existing entry to inspect it
-		let exEntry = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'GET', headers })
-		if (!exEntry.ok) {
-			throw new Error(`Harvest API get request failed with status ${exEntry.status}`);
-		}
-		let ex = await exEntry.json();
-
 		let newEntry = {
-			project_id: ex.project.id,
-			task_id: ex.task.id,
-			spent_date: ex.spent_date,
 			external_reference: {
 				id: commit.sha,
 				group_id: GITHUB_ORG,
 				permalink: commit.url,
 				service: 'GitHub',
 			},
+			// Explicitly set hours to 0 to prevent Harvest from starting a timer
+			// on the new entry
+			hours: 0,
 		}
 
-		if (ex.external_reference) {
-			// Entry already has a reference — create a zero-time satellite entry
-			// so the original is untouched and each commit gets its own reference
-			let notes = [commit.note, commit.message].filter(e=>e);			
+		if (!latestTimeEntryId) {
+			// No entry exists yet — look up the most recent entry to inherit
+			// project/task, and use today's date
+			let last = await GetLastTimeEntry(apiUrl, headers)
+			if (!last) throw new Error('No existing time entries found to inherit project/task from')
+
+			let notes = [commit.note, commit.message].filter(e => e)
+			newEntry.project_id = last.project.id
+			newEntry.task_id = last.task.id
+			newEntry.spent_date = new Date().toISOString().split('T')[0]
 			newEntry.notes = notes.join("\n\n").trim()
-			
-			newEntry.hours = 0
-		} else {
-			// First commit on this entry — delete and recreate to attach external_reference,
-			// carrying over the original time and any existing notes
-			let deleteResponse = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'DELETE', headers })
-			if (!deleteResponse.ok) {
-				throw new Error(`Harvest API delete request failed with status ${deleteResponse.status}`);
+		} else if (latestTimeEntryId) {
+			// Fetch the existing open entry to inspect it
+			let exEntry = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'GET', headers })
+			if (!exEntry.ok) {
+				throw new Error(`Harvest API get request failed with status ${exEntry.status}`);
 			}
-			newEntry.hours = ex.hours_without_timer ?? ex.hours
-			
-			let notes = [ex.notes, commit.note, commit.message].filter(e=>e);			
-			newEntry.notes = notes.join("\n\n").trim()
-			
-			if (ex.started_time) newEntry.started_time = ex.started_time
-			if (ex.ended_time) newEntry.ended_time = ex.ended_time
+			let ex = await exEntry.json();
+
+			newEntry.project_id = ex.project.id
+			newEntry.task_id = ex.task.id
+			newEntry.spent_date = ex.spent_date
+
+			if (ex.external_reference) {
+				// Entry already has a reference — create a zero-time satellite entry
+				// so the original is untouched and each commit gets its own reference
+				let notes = [commit.note, commit.message].filter(e => e)
+				newEntry.notes = notes.join("\n\n").trim()
+			} else {
+				// First commit on this entry — delete and recreate to attach
+				// external_reference, carrying over the original time and any existing notes
+				let deleteResponse = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'DELETE', headers })
+				if (!deleteResponse.ok) {
+					throw new Error(`Harvest API delete request failed with status ${deleteResponse.status}`);
+				}
+				newEntry.hours = ex.hours_without_timer ?? ex.hours
+
+				let notes = [ex.notes, commit.note, commit.message].filter(e => e)
+				newEntry.notes = notes.join("\n\n").trim()
+
+				if (ex.started_time) newEntry.started_time = ex.started_time
+				if (ex.ended_time) newEntry.ended_time = ex.ended_time
+			}
 		}
 
 		let createResponse = await fetch(apiUrl, { method: 'POST', headers, body: JSON.stringify(newEntry) })
@@ -153,8 +172,8 @@ function AreVariablesValid() {
 	let errors = [EXT_NAME]
 	if (typeof (GITHUB_ORG) == 'undefined') errors.push('GITHUB_ORG is undefined - GitHub organisation endpoint slug')
 	if (typeof (GITHUB_TOKEN) == 'undefined') errors.push('GITHUB_TOKEN is undefined - GitHub personal access token')
-	if (typeof (HARVEST_ACCOUNT_ID) == 'undefined') errors.push('HARVEST_ACCOUNT_ID is undefined - Harvest API account ID')
 	if (typeof (HARVEST_TOKEN) == 'undefined') errors.push('HARVEST_TOKEN is undefined - Harvest API token')
+	if (typeof (HARVEST_ACCOUNT_ID) == 'undefined') errors.push('HARVEST_ACCOUNT_ID is undefined - Harvest account ID')
 	if (errors.length > 1) {
 		console.error(errors.join('\n'))
 		return false
