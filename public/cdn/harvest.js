@@ -113,7 +113,7 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 			if (ex.external_reference) {
 				// Entry already has a reference — create a zero-time satellite entry
 				// so the original is untouched and each commit gets its own reference
-				let notes = [commit.note, commit.message].filter(e => e)
+				let notes = [`See parent entry #${latestTimeEntryId}`, commit.note, commit.message].filter(e => e)
 				newEntry.notes = notes.join("\n\n").trim()
 			} else {
 				// First commit on this entry — delete and recreate to attach
