@@ -28,8 +28,7 @@ async function GetLatestCommit() {
 }
 
 async function GetMessageForHarvest() {
-	let custom_note = window.prompt('Custom note?', '')
-	
+	let custom_note = window.prompt('Custom Note?', '')
 	return await GetLatestCommit().then((res) => {
 		if (!res) {
 			ToggleLoader(false);
@@ -65,7 +64,6 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 	}
 
 	try {
-		// Get the ID of the latest time entry
 		let latestTimeEntryId = $('form.day-entry-editor').attr('data-analytics-day-entry-id')
 
 		if (!latestTimeEntryId) {
@@ -73,28 +71,17 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 			return ToggleLoader(false)
 		}
 
-		// Fetch the existing entry to carry over its fields
+		// Fetch the existing entry to inspect it
 		let exEntry = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'GET', headers })
 		if (!exEntry.ok) {
 			throw new Error(`Harvest API get request failed with status ${exEntry.status}`);
 		}
 		let ex = await exEntry.json();
 
-		// external_reference can only be set at creation time (POST), not via PATCH.
-		// So we delete the existing entry and recreate it with all the same fields
-		// plus the external_reference.
-		let deleteResponse = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'DELETE', headers })
-		if (!deleteResponse.ok) {
-			throw new Error(`Harvest API delete request failed with status ${deleteResponse.status}`);
-		}
-
-		let notes = [ex.notes, commit.note, commit.message].filter(e=>e);
 		let newEntry = {
 			project_id: ex.project.id,
 			task_id: ex.task.id,
 			spent_date: ex.spent_date,
-			hours: ex.hours_without_timer ?? ex.hours,
-			notes: notes.join("\n\n").trim(),
 			external_reference: {
 				id: commit.sha,
 				group_id: GITHUB_ORG,
@@ -103,9 +90,28 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 			},
 		}
 
-		// Preserve start/end times if the entry used them
-		if (ex.started_time) newEntry.started_time = ex.started_time
-		if (ex.ended_time) newEntry.ended_time = ex.ended_time
+		if (ex.external_reference) {
+			// Entry already has a reference — create a zero-time satellite entry
+			// so the original is untouched and each commit gets its own reference
+			let notes = [commit.note, commit.message].filter(e=>e);			
+			newEntry.notes = notes.join("\n\n").trim()
+			
+			newEntry.hours = 0
+		} else {
+			// First commit on this entry — delete and recreate to attach external_reference,
+			// carrying over the original time and any existing notes
+			let deleteResponse = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'DELETE', headers })
+			if (!deleteResponse.ok) {
+				throw new Error(`Harvest API delete request failed with status ${deleteResponse.status}`);
+			}
+			newEntry.hours = ex.hours_without_timer ?? ex.hours
+			
+			let notes = [ex.notes, commit.note, commit.message].filter(e=>e);			
+			newEntry.notes = notes.join("\n\n").trim()
+			
+			if (ex.started_time) newEntry.started_time = ex.started_time
+			if (ex.ended_time) newEntry.ended_time = ex.ended_time
+		}
 
 		let createResponse = await fetch(apiUrl, { method: 'POST', headers, body: JSON.stringify(newEntry) })
 		if (!createResponse.ok) {
@@ -113,7 +119,7 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 		}
 
 		let createdEntry = await createResponse.json();
-		console.log('Successfully recreated time entry with external_reference:', createdEntry);
+		console.log('Successfully created time entry with external_reference:', createdEntry);
 		$('.js-close').click()
 	} catch (error) {
 		console.error('Error updating time entry:', error.message);
@@ -147,6 +153,7 @@ function AreVariablesValid() {
 	let errors = [EXT_NAME]
 	if (typeof (GITHUB_ORG) == 'undefined') errors.push('GITHUB_ORG is undefined - GitHub organisation endpoint slug')
 	if (typeof (GITHUB_TOKEN) == 'undefined') errors.push('GITHUB_TOKEN is undefined - GitHub personal access token')
+	if (typeof (HARVEST_ACCOUNT_ID) == 'undefined') errors.push('HARVEST_ACCOUNT_ID is undefined - Harvest API account ID')
 	if (typeof (HARVEST_TOKEN) == 'undefined') errors.push('HARVEST_TOKEN is undefined - Harvest API token')
 	if (errors.length > 1) {
 		console.error(errors.join('\n'))
