@@ -114,8 +114,6 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 				permalink: commit.url,
 				service: 'GitHub',
 			},
-			// Explicitly set hours to 0 to prevent Harvest from starting a timer
-			// on the new entry
 			hours: 0,
 		}
 
@@ -130,12 +128,10 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 			newEntry.task_id = last.task.id
 			newEntry.spent_date = new Date().toISOString().split('T')[0]
 			newEntry.notes = notes.join("\n\n").trim()
-		} else if (latestTimeEntryId) {
+		} else {
 			// Fetch the existing open entry to inspect it
 			let exEntry = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'GET', headers })
-			if (!exEntry.ok) {
-				throw new Error(`Harvest API get request failed with status ${exEntry.status}`);
-			}
+			if (!exEntry.ok) throw new Error(`Harvest API get request failed with status ${exEntry.status}`)
 			let ex = await exEntry.json();
 
 			newEntry.project_id = ex.project.id
@@ -148,26 +144,45 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 				let notes = [`See parent entry #${latestTimeEntryId}`, commit.note, commit.message].filter(e => e)
 				newEntry.notes = notes.join("\n\n").trim()
 			} else {
-				// First reference on this entry — delete and recreate to attach
-				// external_reference, carrying over the original time and any existing notes
-				let deleteResponse = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'DELETE', headers })
-				if (!deleteResponse.ok) {
-					throw new Error(`Harvest API delete request failed with status ${deleteResponse.status}`);
-				}
-				newEntry.hours = ex.hours_without_timer ?? ex.hours
+				// No reference yet — try PATCHing external_reference directly first,
+				// as this preserves the entry's position in the list
+				let patchResponse = await fetch(`${apiUrl}/${latestTimeEntryId}`, {
+					method: 'PATCH',
+					headers,
+					body: JSON.stringify({
+						external_reference: newEntry.external_reference,
+					}),
+				})
 
+				if (patchResponse.ok) {
+					// PATCH worked — just append notes and bail out, no recreate needed
+					let patched = await patchResponse.json();
+					let notes = [ex.notes, commit.note, commit.message].filter(e => e)
+					let refNotes = [`Ref: #${patched.id}`, ...notes].filter(e => e).join("\n\n").trim()
+					await fetch(`${apiUrl}/${latestTimeEntryId}`, {
+						method: 'PATCH',
+						headers,
+						body: JSON.stringify({ notes: refNotes }),
+					})
+					$('.js-close').click()
+					return
+				}
+
+				// PATCH rejected external_reference — fall back to delete-recreate
+				console.warn(`Harvest PATCH rejected external_reference (${patchResponse.status}), falling back to delete-recreate`)
+				let deleteResponse = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'DELETE', headers })
+				if (!deleteResponse.ok) throw new Error(`Harvest API delete request failed with status ${deleteResponse.status}`)
+
+				newEntry.hours = ex.hours_without_timer ?? ex.hours
 				let notes = [ex.notes, commit.note, commit.message].filter(e => e)
 				newEntry.notes = notes.join("\n\n").trim()
-
 				if (ex.started_time) newEntry.started_time = ex.started_time
 				if (ex.ended_time) newEntry.ended_time = ex.ended_time
 			}
 		}
 
 		let createResponse = await fetch(apiUrl, { method: 'POST', headers, body: JSON.stringify(newEntry) })
-		if (!createResponse.ok) {
-			throw new Error(`Harvest API create request failed with status ${createResponse.status}`);
-		}
+		if (!createResponse.ok) throw new Error(`Harvest API create request failed with status ${createResponse.status}`)
 
 		let createdEntry = await createResponse.json();
 		console.log('Successfully created time entry with external_reference:', createdEntry);
