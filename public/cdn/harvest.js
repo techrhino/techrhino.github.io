@@ -55,6 +55,38 @@ async function UpdateLatestHarvest() {
 	return UpdateLatestTimeEntry(accountId, commit);
 }
 
+async function GetExternalLinkForHarvest() {
+	let url = window.prompt('URL to link?', '')
+	if (!url) return null
+	let note = window.prompt('Note?', '')
+
+	let id
+	try {
+		id = new URL(url).pathname.replace(/\//g, '-').replace(/^-|-$/g, '') || 'link'
+	} catch {
+		id = 'link'
+	}
+
+	return {
+		note,
+		message: null,
+		url,
+		sha: id,
+	}
+}
+
+async function UpdateLatestHarvestWithLink() {
+	ToggleLoader(true)
+
+	let accountId = HARVEST_ACCOUNT_ID;
+	let link = await GetExternalLinkForHarvest();
+	if (!link) {
+		ToggleLoader(false)
+		return
+	}
+	return UpdateLatestTimeEntry(accountId, link);
+}
+
 async function GetLastTimeEntry(apiUrl, headers) {
 	let response = await fetch(`${apiUrl}?per_page=1`, { method: 'GET', headers })
 	if (!response.ok) {
@@ -116,7 +148,7 @@ async function UpdateLatestTimeEntry(accountId, commit) {
 				let notes = [`See parent entry #${latestTimeEntryId}`, commit.note, commit.message].filter(e => e)
 				newEntry.notes = notes.join("\n\n").trim()
 			} else {
-				// First commit on this entry — delete and recreate to attach
+				// First reference on this entry — delete and recreate to attach
 				// external_reference, carrying over the original time and any existing notes
 				let deleteResponse = await fetch(`${apiUrl}/${latestTimeEntryId}`, { method: 'DELETE', headers })
 				if (!deleteResponse.ok) {
@@ -178,13 +210,23 @@ function CreateGitHubActionButton() {
 	if (!AreVariablesValid()) return
 
 	let cont = form.find('.js-submit').parent();
+
 	let git = `
-	<a type="button" class="pds-button github-time-entry" style="margin-left: 1rem;">
+	<a type="button" class="pds-button github-time-entry" style="margin-left: 1rem;" title="Link latest GitHub commit">
 	    <svg viewBox="0 0 16 16" style="width: 25px;" fill="white">
 	    <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
 		</svg>
 	</a>`;
+
+	let link = `
+	<a type="button" class="pds-button harvest-link-entry" style="margin-left: 0.5rem;" title="Link external URL">
+		<svg viewBox="0 0 16 16" style="width: 25px;" fill="white">
+			<path d="M7.775 3.275a.75.75 0 0 0 1.06 1.06l1.25-1.25a2 2 0 1 1 2.83 2.83l-2.5 2.5a2 2 0 0 1-2.83 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l2.5-2.5a3.5 3.5 0 0 0-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 0 1 0-2.83l2.5-2.5a2 2 0 0 1 2.83 0 .75.75 0 0 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-2.5 2.5a3.5 3.5 0 0 0 4.95 4.95l1.25-1.25a.75.75 0 0 0-1.06-1.06l-1.25 1.25a2 2 0 0 1-2.83 0z"/>
+		</svg>
+	</a>`;
+
 	cont.append(git);
+	cont.append(link);
 }
 
 function AreVariablesValid() {
@@ -202,6 +244,7 @@ function AreVariablesValid() {
 
 $(document).on('click', '.js-edit-entry, .js-new-time-entry', () => CreateGitHubActionButton());
 $(document).on('click', '.github-time-entry', () => UpdateLatestHarvest());
+$(document).on('click', '.harvest-link-entry', () => UpdateLatestHarvestWithLink());
 $(document).on('load', '.day-entry-editor', () => console.log('form loaded'));
 $(document).on('keydown', e => KeyDown(e));
 
@@ -219,6 +262,9 @@ async function AltDown(event, char) {
 	switch (char) {
 		case 'g':
 			$('.github-time-entry').trigger('click')
+			break;
+		case 'l':
+			$('.harvest-link-entry').trigger('click')
 			break;
 	}
 }
