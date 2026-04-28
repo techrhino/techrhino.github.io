@@ -8,6 +8,7 @@ function AreVariablesValid() {
 	if (typeof (GITHUB_TOKEN) == 'undefined') errors.push('GITHUB_TOKEN is undefined - GitHub personal access token')
 	if (typeof (HARVEST_TOKEN) == 'undefined') errors.push('HARVEST_TOKEN is undefined - Harvest API token')
 	if (typeof (HARVEST_ACCOUNT_ID) == 'undefined') errors.push('HARVEST_ACCOUNT_ID is undefined - Harvest account ID')
+	if (typeof (ANTHROPIC_TOKEN) == 'undefined') errors.push('ANTHROPIC_TOKEN is undefined - Anthropic API key')
 	if (errors.length > 1) {
 		console.error(errors.join('\n'))
 		return false
@@ -248,7 +249,11 @@ async function EnhanceNotes() {
 	try {
 		let response = await fetch('https://api.anthropic.com/v1/messages', {
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
+			headers: { 
+				'Content-Type': 'application/json',
+				'x-api-key': ANTHROPIC_TOKEN,
+    			'anthropic-version': '2023-06-01',
+			},
 			body: JSON.stringify({
 				model: 'claude-sonnet-4-20250514',
 				max_tokens: 1000,
