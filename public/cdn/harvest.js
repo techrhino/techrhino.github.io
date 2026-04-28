@@ -8,7 +8,6 @@ function AreVariablesValid() {
 	if (typeof (GITHUB_TOKEN) == 'undefined') errors.push('GITHUB_TOKEN is undefined - GitHub personal access token')
 	if (typeof (HARVEST_TOKEN) == 'undefined') errors.push('HARVEST_TOKEN is undefined - Harvest API token')
 	if (typeof (HARVEST_ACCOUNT_ID) == 'undefined') errors.push('HARVEST_ACCOUNT_ID is undefined - Harvest account ID')
-	if (typeof (GEMINI_TOKEN) == 'undefined') errors.push('GEMINI_TOKEN is undefined - Google Gemini API key')
 	if (errors.length > 1) {
 		console.error(errors.join('\n'))
 		return false
@@ -38,11 +37,6 @@ function InjectButtons() {
 		<a type="button" class="pds-button harvest-link-entry" style="margin-left: 0.5rem;" title="Link external URL">
 			<svg viewBox="0 0 16 16" style="width: 25px;" fill="white">
 				<path d="M7.775 3.275a.75.75 0 0 0 1.06 1.06l1.25-1.25a2 2 0 1 1 2.83 2.83l-2.5 2.5a2 2 0 0 1-2.83 0 .75.75 0 0 0-1.06 1.06 3.5 3.5 0 0 0 4.95 0l2.5-2.5a3.5 3.5 0 0 0-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 0 1 0-2.83l2.5-2.5a2 2 0 0 1 2.83 0 .75.75 0 0 0 1.06-1.06 3.5 3.5 0 0 0-4.95 0l-2.5 2.5a3.5 3.5 0 0 0 4.95 4.95l1.25-1.25a.75.75 0 0 0-1.06-1.06l-1.25 1.25a2 2 0 0 1-2.83 0z"/>
-			</svg>
-		</a>
-		<a type="button" class="pds-button harvest-enhance-entry" style="margin-left: 0.5rem;" title="Enhance notes with AI">
-			<svg viewBox="0 0 16 16" style="width: 25px;" fill="white">
-				<path d="M9.504.43a1.516 1.516 0 0 1 2.437 1.713L10.415 5.5h2.123c1.57 0 2.454 1.8 1.47 3.04l-5.946 7.355a1.516 1.516 0 0 1-2.437-1.713L7.15 10.5H5.027c-1.57 0-2.454-1.8-1.47-3.04L9.504.43z"/>
 			</svg>
 		</a>
 	`);
@@ -232,55 +226,6 @@ async function LinkReference(ref) {
 	}
 }
 
-async function EnhanceNotes() {
-	let entryId = GetOpenEntryId()
-	if (!entryId) {
-		console.warn('No time entry open to enhance')
-		return
-	}
-
-	let currentNotes = GetOpenEntryNotes()
-	if (!currentNotes) {
-		console.warn('No notes to enhance')
-		return
-	}
-
-	ToggleLoader(true)
-	try {
-		let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_TOKEN}`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				systemInstruction: {
-					parts: [{ text: `You are a professional technical writer helping improve time-tracking notes for a software development team.
-Rewrite the provided time entry notes to be clear, concise, and professional.
-Guidelines:
-- Use plain, active language (e.g. "Segmented recorded meeting and linked discussions to Jira tickets")
-- Preserve all technical detail, ticket references, URLs, and Ref/See lines exactly as-is
-- Keep it brief — one or two sentences per distinct task at most
-- Do not add information that wasn't implied by the original
-- Return only the rewritten notes, no preamble or explanation` }]
-				},
-				contents: [{ parts: [{ text: currentNotes }] }],
-			}),
-		})
-		if (!response.ok) throw new Error(`Gemini API request failed with status ${response.status}`)
-
-		let data = await response.json()
-		let enhanced = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-		if (!enhanced) throw new Error('No text response from Gemini')
-
-		if (window.confirm(`Replace notes with:\n\n${enhanced}`)) {
-			await PatchTimeEntry(entryId, { notes: enhanced })
-			SetOpenEntryNotes(enhanced)
-		}
-	} catch (error) {
-		console.error('Error enhancing notes:', error.message)
-	}
-
-	ToggleLoader(false)
-}
-
 // ─── Button click handlers ────────────────────────────────────────────────────
 
 async function OnGitHubClick() {
@@ -303,7 +248,6 @@ async function OnLinkClick() {
 $(document).on('click', '.js-edit-entry, .js-new-time-entry', () => InjectButtons())
 $(document).on('click', '.github-time-entry', () => OnGitHubClick())
 $(document).on('click', '.harvest-link-entry', () => OnLinkClick())
-$(document).on('click', '.harvest-enhance-entry', () => EnhanceNotes())
 $(document).on('keydown', async e => {
 	let char = String.fromCharCode(e.which).toLowerCase()
 	if (!e.altKey && !e.metaKey) return
@@ -311,6 +255,5 @@ $(document).on('keydown', async e => {
 	switch (char) {
 		case 'g': $('.github-time-entry').trigger('click'); break
 		case 'l': $('.harvest-link-entry').trigger('click'); break
-		case 'e': $('.harvest-enhance-entry').trigger('click'); break
 	}
 })
