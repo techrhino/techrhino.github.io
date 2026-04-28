@@ -8,7 +8,7 @@ function AreVariablesValid() {
 	if (typeof (GITHUB_TOKEN) == 'undefined') errors.push('GITHUB_TOKEN is undefined - GitHub personal access token')
 	if (typeof (HARVEST_TOKEN) == 'undefined') errors.push('HARVEST_TOKEN is undefined - Harvest API token')
 	if (typeof (HARVEST_ACCOUNT_ID) == 'undefined') errors.push('HARVEST_ACCOUNT_ID is undefined - Harvest account ID')
-	if (typeof (ANTHROPIC_TOKEN) == 'undefined') errors.push('ANTHROPIC_TOKEN is undefined - Anthropic API key')
+	if (typeof (GEMINI_TOKEN) == 'undefined') errors.push('GEMINI_TOKEN is undefined - Google Gemini API key')
 	if (errors.length > 1) {
 		console.error(errors.join('\n'))
 		return false
@@ -247,32 +247,28 @@ async function EnhanceNotes() {
 
 	ToggleLoader(true)
 	try {
-		let response = await fetch('https://api.anthropic.com/v1/messages', {
+		let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_TOKEN}`, {
 			method: 'POST',
-			headers: { 
-				'Content-Type': 'application/json',
-				'x-api-key': ANTHROPIC_TOKEN,
-    			'anthropic-version': '2023-06-01',
-			},
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
-				model: 'claude-haiku-4-5-20251001',
-				max_tokens: 1000,
-				system: `You are a professional technical writer helping improve time-tracking notes for a software development team.
+				systemInstruction: {
+					parts: [{ text: `You are a professional technical writer helping improve time-tracking notes for a software development team.
 Rewrite the provided time entry notes to be clear, concise, and professional.
 Guidelines:
 - Use plain, active language (e.g. "Segmented recorded meeting and linked discussions to Jira tickets")
 - Preserve all technical detail, ticket references, URLs, and Ref/See lines exactly as-is
 - Keep it brief — one or two sentences per distinct task at most
 - Do not add information that wasn't implied by the original
-- Return only the rewritten notes, no preamble or explanation`,
-				messages: [{ role: 'user', content: currentNotes }],
+- Return only the rewritten notes, no preamble or explanation` }]
+				},
+				contents: [{ parts: [{ text: currentNotes }] }],
 			}),
 		})
-		if (!response.ok) throw new Error(`Claude API request failed with status ${response.status}`)
+		if (!response.ok) throw new Error(`Gemini API request failed with status ${response.status}`)
 
 		let data = await response.json()
-		let enhanced = data.content?.find(b => b.type === 'text')?.text?.trim()
-		if (!enhanced) throw new Error('No text response from Claude')
+		let enhanced = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+		if (!enhanced) throw new Error('No text response from Gemini')
 
 		if (window.confirm(`Replace notes with:\n\n${enhanced}`)) {
 			await PatchTimeEntry(entryId, { notes: enhanced })
