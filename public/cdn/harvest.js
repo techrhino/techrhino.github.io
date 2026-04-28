@@ -255,7 +255,7 @@ async function EnhanceNotes() {
     			'anthropic-version': '2023-06-01',
 			},
 			body: JSON.stringify({
-				model: 'claude-sonnet-4-20250514',
+				model: 'claude-haiku-4-5-20251001',
 				max_tokens: 1000,
 				system: `You are a professional technical writer helping improve time-tracking notes for a software development team.
 Rewrite the provided time entry notes to be clear, concise, and professional.
