@@ -197,7 +197,7 @@ async function LinkReference(ref) {
 				if (patched) {
 					let notes = [ex.notes, ref.note, ref.message].filter(Boolean)
 					await PatchTimeEntry(entryId, {
-						notes: [`Ref: #${entryId}`, ...notes].filter(Boolean).join("\n\n").trim()
+						notes: [...notes].filter(Boolean).join("\n\n").trim()
 					})
 				} else {
 					// PATCH rejected — fall back to delete-recreate
@@ -213,7 +213,7 @@ async function LinkReference(ref) {
 						...(ex.ended_time && { ended_time: ex.ended_time }),
 					})
 					await PatchTimeEntry(created.id, {
-						notes: [`Ref: #${created.id}`, created.notes].filter(Boolean).join("\n\n")
+						notes: [created.notes].filter(Boolean).join("\n\n")
 					})
 				}
 			}
