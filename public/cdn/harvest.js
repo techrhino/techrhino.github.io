@@ -132,26 +132,15 @@ function GetOpenEntryId() {
 	return $('form.day-entry-editor').attr('data-analytics-day-entry-id')
 }
 
-function GetOpenEntryNotes() {
-	return $('form.day-entry-editor textarea[name="notes"]').val()?.trim()
-}
-
-function SetOpenEntryNotes(notes) {
-	$('form.day-entry-editor textarea[name="notes"]').val(notes).trigger('input')
-}
-
 async function LinkReference(ref) {
 	ToggleLoader(true)
 	try {
 		let entryId = GetOpenEntryId()
-		let base = {
-			external_reference: {
-				id: ref.sha,
-				group_id: GITHUB_ORG,
-				permalink: ref.url,
-				service: 'GitHub',
-			},
-			hours: 0,
+		let externalReference = {
+			id: ref.sha,
+			group_id: GITHUB_ORG,
+			permalink: ref.url,
+			service: 'GitHub',
 		}
 
 		if (!entryId) {
@@ -159,8 +148,9 @@ async function LinkReference(ref) {
 			let last = await GetLastTimeEntry()
 			if (!last) throw new Error('No existing time entries found to inherit project/task from')
 
-			await CreateTimeEntry({
-				...base,
+			let created = await CreateTimeEntry({
+				external_reference: externalReference,
+				hours: 0,
 				project_id: last.project.id,
 				task_id: last.task.id,
 				spent_date: new Date().toISOString().split('T')[0],
@@ -168,54 +158,31 @@ async function LinkReference(ref) {
 			})
 		} else {
 			let ex = await GetTimeEntry(entryId)
-			let sharedFields = {
-				project_id: ex.project.id,
-				task_id: ex.task.id,
-				spent_date: ex.spent_date,
-			}
+			let newNotes = [ex.notes, ref.note, ref.message].filter(Boolean).join("\n\n").trim()
 
-			if (ex.external_reference) {
-				// Already has a reference — create a zero-time satellite entry
-				let created = await CreateTimeEntry({
-					...base,
-					...sharedFields,
-					notes: [`See parent entry #${entryId}`, ref.note, ref.message].filter(Boolean).join("\n\n").trim(),
-				})
-				let createdWithRef = await PatchTimeEntry(created.id, { notes: [`Ref: #${created.id}`, created.notes].filter(Boolean).join("\n\n") })
+			// Try PATCH first — it may work even with an existing external_reference
+			let patched = await PatchTimeEntry(entryId, {
+				external_reference: externalReference,
+				notes: newNotes,
+			}).catch(() => null)
 
-				// Cross-reference both entries
-				await PatchTimeEntry(entryId, {
-					notes: [ex.notes, `See satellite entry #${created.id}`].filter(Boolean).join("\n\n").trim()
-				})
+			if (patched?.external_reference?.permalink === ref.url) {
+				// PATCH took — nothing more to do
 			} else {
-				// No reference yet — try PATCH first to preserve list position
-				let patched = await HarvestFetch(`/time_entries/${entryId}`, {
-					method: 'PATCH',
-					body: JSON.stringify({ external_reference: base.external_reference }),
-				}).catch(() => null)
+				// PATCH didn't apply the external_reference — fall back to delete+recreate
+				console.warn('Harvest PATCH did not apply external_reference, falling back to delete+recreate')
+				await DeleteTimeEntry(entryId)
 
-				if (patched) {
-					let notes = [ex.notes, ref.note, ref.message].filter(Boolean)
-					await PatchTimeEntry(entryId, {
-						notes: [...notes].filter(Boolean).join("\n\n").trim()
-					})
-				} else {
-					// PATCH rejected — fall back to delete-recreate
-					console.warn('Harvest PATCH rejected external_reference, falling back to delete-recreate')
-					await DeleteTimeEntry(entryId)
-
-					let created = await CreateTimeEntry({
-						...base,
-						...sharedFields,
-						hours: ex.hours_without_timer ?? ex.hours,
-						notes: [ex.notes, ref.note, ref.message].filter(Boolean).join("\n\n").trim(),
-						...(ex.started_time && { started_time: ex.started_time }),
-						...(ex.ended_time && { ended_time: ex.ended_time }),
-					})
-					await PatchTimeEntry(created.id, {
-						notes: [created.notes].filter(Boolean).join("\n\n")
-					})
-				}
+				let created = await CreateTimeEntry({
+					external_reference: externalReference,
+					project_id: ex.project.id,
+					task_id: ex.task.id,
+					spent_date: ex.spent_date,
+					hours: ex.hours_without_timer ?? ex.hours,
+					notes: newNotes,
+					...(ex.started_time && { started_time: ex.started_time }),
+					...(ex.ended_time && { ended_time: ex.ended_time }),
+				})
 			}
 		}
 
