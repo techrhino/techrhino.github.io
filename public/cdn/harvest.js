@@ -65,6 +65,7 @@ async function PromptForCommit() {
 	let commit = await FetchLatestCommit(project, branch)
 	return {
 		note,
+		project,
 		message: commit?.commit?.message,
 		url: commit?.html_url,
 		sha: commit?.sha,
@@ -142,7 +143,7 @@ async function LinkReference(ref) {
 			permalink: ref.url,
 			service: 'GitHub',
 		}
-
+		let msg = `${ref.message} (${ref.project})`
 		if (!entryId) {
 			// No entry open — inherit project/task from most recent and use today's date
 			let last = await GetLastTimeEntry()
@@ -154,11 +155,11 @@ async function LinkReference(ref) {
 				project_id: last.project.id,
 				task_id: last.task.id,
 				spent_date: new Date().toISOString().split('T')[0],
-				notes: [ref.note, ref.message].filter(Boolean).join("\n\n").trim(),
+				notes: [ref.note, msg].filter(Boolean).join("\n\n").trim(),
 			})
 		} else {
 			let ex = await GetTimeEntry(entryId)
-			let newNotes = [ex.notes, ref.note, ref.message].filter(Boolean).join("\n\n").trim()
+			let newNotes = [ex.notes, ref.note, msg].filter(Boolean).join("\n\n").trim()
 
 			// Try PATCH first — it may work even with an existing external_reference
 			let patched = await PatchTimeEntry(entryId, {
