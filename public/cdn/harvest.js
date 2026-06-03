@@ -66,6 +66,7 @@ async function PromptForCommit() {
 	return {
 		note,
 		project,
+		branch,
 		message: commit?.commit?.message,
 		url: commit?.html_url,
 		sha: commit?.sha,
@@ -143,7 +144,7 @@ async function LinkReference(ref) {
 			permalink: ref.url,
 			service: 'GitHub',
 		}
-		let msg = `${ref.message} (${ref.project})`
+		let msg = ref.message ? `${ref.message} (${ref.project}/${ref.branch})` : null
 		if (!entryId) {
 			// No entry open — inherit project/task from most recent and use today's date
 			let last = await GetLastTimeEntry()
